@@ -3,77 +3,211 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gestão de Caixa Completo</title>
+    <title>Dashboard de Caixa Inteligente</title>
+    <!-- Importando biblioteca de ícones e fontes modernas -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Biblioteca de Gráficos JS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <style>
-        :root { --primary: #2c3e50; --success: #27ae60; --danger: #c0392b; --light: #ecf0f1; --blue: #2980b9; --dark: #34495e; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; margin: 0; padding: 20px; color: #333; }
-        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        h2, h3 { margin-top: 0; color: var(--primary); }
-        
-        /* Sistema de Abas */
-        .tabs { display: flex; border-bottom: 2px solid var(--light); margin-bottom: 20px; flex-wrap: wrap; }
-        .tab-btn { padding: 12px 20px; border: none; background: none; font-size: 15px; font-weight: bold; cursor: pointer; color: #7f8c8d; transition: 0.2s; }
-        .tab-btn.active { color: var(--blue); border-bottom: 3px solid var(--blue); }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
+        :root {
+            --bg-paged: #f3f4f6;
+            --surface: #ffffff;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+        }
 
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-paged);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            animation: fadeIn 0.6s ease-out;
+            transition: background-color 0.3s, color 0.3s;
+        }
 
-        .form-group { margin-bottom: 12px; }
-        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 15px; }
-        
-        button { width: 100%; padding: 12px; background: var(--blue); color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        button:hover { opacity: 0.9; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 28px;
+            color: var(--text-main);
+        }
+
+        header p {
+            margin: 5px 0 0;
+            color: var(--text-muted);
+        }
+
+        /* Abas Estilizadas */
+        .tabs {
+            display: flex;
+            background: #e5e7eb;
+            padding: 4px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            gap: 4px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: none;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .tab-btn.active {
+            background: var(--surface);
+            color: var(--primary);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        /* Grid Layout */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .grid-2 { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: var(--surface);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: transform 0.3s ease, background-color 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+        }
+
+        h3 { margin-top: 0; font-size: 18px; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 15px; }
+
+        /* Formulários */
+        .form-group { margin-bottom: 16px; padding: 10px; border-radius: 8px; border: 1px solid transparent; transition: all 0.3s ease; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; color: inherit; }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 15px;
+            transition: all 0.2s;
+            background-color: #f9fafb;
+            color: #1f2937;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            background-color: var(--surface);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        button:hover { background: var(--primary-hover); transform: scale(1.01); }
         .btn-success { background: var(--success); }
-        .btn-danger { background: var(--danger); margin-top: 15px; }
+        .btn-success:hover { background: #059669; }
+        .btn-danger { background: #fee2e2; color: var(--danger); margin-top: 20px; border: none; }
+        .btn-danger:hover { background: #fca5a5; }
 
-        /* Tabelas e Cards de Resumo */
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
-        th, td { padding: 10px; border: 1px solid var(--light); text-align: left; }
-        th { background-color: #f2f2f2; }
-        .txt-success { color: var(--success); font-weight: bold; }
-        .txt-danger { color: var(--danger); font-weight: bold; }
+        /* Tabela Dinâmica */
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); color: inherit; }
+        th { background: rgba(0,0,0,0.02); color: var(--text-muted); font-weight: 600; }
+        
+        /* Badges de Destaque Animadas */
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .kpi-card { background: var(--surface); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); text-align: center; border-top: 4px solid var(--border); transition: background-color 0.3s; }
+        .kpi-card.in { border-top-color: var(--success); }
+        .kpi-card.out { border-top-color: var(--danger); }
+        .kpi-card.bal { border-top-color: var(--primary); }
+        .kpi-value { font-size: 24px; font-weight: 700; margin-top: 5px; }
 
-        .history-list { max-height: 300px; overflow-y: auto; margin-top: 15px; }
-        .history-item { background: var(--light); padding: 12px; border-radius: 4px; margin-bottom: 10px; font-size: 14px; border-left: 5px solid #bdc3c7; }
-        .item-success { border-left-color: var(--success); }
-        .item-danger { border-left-color: var(--danger); }
-        .res-box { padding: 15px; border-radius: 4px; font-weight: bold; text-align: center; margin-top: 15px; display: none; }
-
-        /* Cards do Mensal */
-        .monthly-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-top: 15px; }
-        .month-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-        .month-title { font-size: 16px; font-weight: bold; color: var(--dark); border-bottom: 1px solid #edf2f7; padding-bottom: 5px; margin-bottom: 10px; text-transform: capitalize; }
-        .month-stat { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 6px; }
+        /* Graficos Wrapper */
+        .chart-container { position: relative; height: 260px; width: 100%; margin-bottom: 20px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <!-- Navegação por Abas -->
+    <header>
+        <h1>Smart Caixa Dashboard</h1>
+        <p>Controle financeiro interativo e em tempo real</p>
+    </header>
+
+    <!-- Menu de Abas -->
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('aba-lancamentos')">1. Lançar Movimentações</button>
-        <button class="tab-btn" onclick="switchTab('aba-fechamento')">2. Fechamento Diário</button>
-        <button class="tab-btn" onclick="switchTab('aba-mensal')">3. Relatório Mensal 📊</button>
+        <button class="tab-btn active" onclick="switchTab('aba-lancamentos')">⚡ Lançamentos rápidos</button>
+        <button class="tab-btn" onclick="switchTab('aba-fechamento')">🔒 Fechar o dia</button>
+        <button class="tab-btn" onclick="switchTab('aba-dashboard')">📊 Dashboard Mensal</button>
     </div>
 
-    <!-- ABA 1: LANÇAMENTOS DO DIA -->
+    <!-- ABA 1: LANÇAMENTOS -->
     <div id="aba-lancamentos" class="tab-content active">
-        <div class="grid">
-            <div>
-                <h3>Registrar Nova Movimentação</h3>
-                <form id="movimentacaoForm">
+        <div class="grid-2">
+            <div class="card">
+                <h3>Nova Entrada ou Saída</h3>
+                <form id="movForm">
                     <div class="form-group">
-                        <label for="tipo">Tipo de Registro:</label>
+                        <label>Tipo:</label>
                         <select id="tipo" required>
-                            <option value="Entrada">Entrada (Venda / Recebimento)</option>
-                            <option value="Saída">Saída (Despesa / Pagamento / Sangria)</option>
+                            <option value="Entrada">📈 Entrada (Venda / Pix / Cartão)</option>
+                            <option value="Saída">📉 Saída (Conta / Sangria / Despesa)</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="pagamento">Forma de Pagamento:</label>
+                        <label>Forma de Recebimento/Pagamento:</label>
                         <select id="pagamento" required>
                             <option value="Pix">Pix</option>
                             <option value="Cartão de Crédito">Cartão de Crédito</option>
@@ -82,271 +216,317 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="valorMov">Valor (R$):</label>
+                        <label>Valor (R$):</label>
                         <input type="number" id="valorMov" step="0.01" required placeholder="0,00">
                     </div>
                     <div class="form-group">
-                        <label for="descMov">Descrição opcional:</label>
-                        <input type="text" id="descMov" placeholder="Ex: Venda cliente X">
+                        <label>Identificação / Notas:</label>
+                        <input type="text" id="descMov" placeholder="Ex: Cliente João, compra insumos">
                     </div>
-                    <button type="submit">Adicionar ao Fluxo</button>
+                    <button type="submit">Inserir no Caixa</button>
                 </form>
             </div>
-            <div>
-                <h3>Movimentações de Hoje</h3>
-                <div style="overflow-x:auto;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Tipo</th>
-                                <th>Pagamento</th>
-                                <th>Valor</th>
-                                <th>Descrição</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabelaMovimentacoes"></tbody>
-                    </table>
-                </div>
+            <div class="card" style="max-height: 480px; overflow-y: auto;">
+                <h3>Fila de Registros (Hoje)</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fluxo</th>
+                            <th>Forma</th>
+                            <th>Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaMov"></tbody>
+                </table>
             </div>
         </div>
     </div>
 
-    <!-- ABA 2: FECHAMENTO DO DIA -->
+    <!-- ABA 2: FECHAMENTO DIÁRIO -->
     <div id="aba-fechamento" class="tab-content">
-        <div class="grid">
-            <div>
-                <h3>Conferência Final</h3>
+        <div class="grid-2">
+            <div class="card">
+                <h3>Finalizar Caixa Corrente</h3>
                 <form id="fechamentoForm">
                     <div class="form-group">
-                        <label for="dataFechamento">Data do Caixa:</label>
+                        <label>Data:</label>
                         <input type="date" id="dataFechamento" required>
                     </div>
                     <div class="form-group">
-                        <label for="abertura">Saldo Inicial / Troco de Abertura (R$):</label>
-                        <input type="number" id="abertura" step="0.01" value="0.00" oninput="atualizarResumoCalculado()" required>
+                        <label>Fundo de Caixa Inicial (Troco de Abertura):</label>
+                        <input type="number" id="abertura" step="0.01" value="0.00" oninput="calcularResumo()" required>
                     </div>
-                    <div style="background: #f8f9fa; padding: 12px; border-radius: 4px; margin-bottom: 15px; border-left: 4px solid var(--blue);">
-                        <strong>Resumo Calculado por Lançamentos:</strong><br>
-                        <small>Total Entradas: R$ <span id="resumoEntradas">0.00</span></small><br>
-                        <small>Total Saídas: R$ <span id="resumoSaidas">0.00</span></small><br>
-                        <strong>Saldo Esperado em Caixa: R$ <span id="resumoEsperado">0.00</span></strong>
+                    
+                    <div style="background: rgba(0,0,0,0.03); padding: 15px; border-radius: 8px; margin-bottom: 15px; font-size: 14px;">
+                        <span style="font-size: 13px; color: var(--text-muted);">Cálculo automático do sistema:</span>
+                        <div style="display:flex; justify-content:space-between; margin: 5px 0;"><span>(+) Entradas:</span> <strong id="resEntradas">R$ 0,00</strong></div>
+                        <div style="display:flex; justify-content:space-between; margin: 5px 0;"><span>(-) Saídas:</span> <strong id="resSaidas" style="color:var(--danger)">R$ 0,00</strong></div>
+                        <div style="display:flex; justify-content:space-between; padding-top:5px; border-top:1px dashed #ccc;"><strong>(=) Saldo Esperado:</strong> <strong id="resEsperado" style="color:var(--primary)">R$ 0,00</strong></div>
                     </div>
-                    <div class="form-group" style="background: #fcf8e3; padding: 10px; border-radius: 4px;">
-                        <label for="real"><strong>Conferência Física (Quanto tem na gaveta + comprovantes):</strong></label>
-                        <input type="number" id="real" step="0.01" placeholder="Conte tudo e digite aqui" required>
+
+                    <!-- CONTAINER COM COR DE FUNDO DINÂMICA -->
+                    <div id="containerReal" class="form-group" style="background: #fffbeb; border: 1px solid #fde68a; color: #1f2937;">
+                        <label><strong>Conferência Real na Gaveta (Dinheiro + Canhoto):</strong></label>
+                        <input type="number" id="real" step="0.01" placeholder="Quanto tem fisicamente?" oninput="calcularResumo()" required>
                     </div>
-                    <button type="submit" class="btn-success">Salvar e Fechar Caixa do Dia</button>
+                    <button type="submit" class="btn-success">Travar e Salvar Dia</button>
                 </form>
-                <div id="resultadoFechamento" class="res-box"></div>
             </div>
-            <div>
-                <h3>Histórico de Dias Anteriores</h3>
-                <div class="history-list" id="historicoGeral"></div>
-                <button class="btn-danger" onclick="limparTodoHistorico()">Apagar Histórico Antigo</button>
+            <div class="card" style="max-height: 480px; overflow-y: auto;">
+                <h3>Dias Anteriores Fechados</h3>
+                <div id="historicoGeral"></div>
+                <button class="btn-danger" onclick="limparTudo()">Resetar Banco de Dados</button>
             </div>
         </div>
     </div>
 
-    <!-- ABA 3: RELATÓRIO MENSAL AUTOMÁTICO -->
-    <div id="aba-mensal" class="tab-content">
-        <h3>Fechamento Acumulado por Mês</h3>
-        <p style="color: #666; font-size: 14px;">Calculado automaticamente com base nos dias salvos no histórico.</p>
-        <div class="monthly-grid" id="containerMensal">
-            <!-- Gerado via JavaScript -->
+    <!-- ABA 3: DASHBOARD ANIMADA -->
+    <div id="aba-dashboard" class="tab-content">
+        <!-- Indicadores Rápidos (KPIs) -->
+        <div class="kpi-grid">
+            <div class="kpi-card in">
+                <span style="color: var(--text-muted); font-size:14px;">Faturamento Acumulado</span>
+                <div class="kpi-value" id="kpiEntradas" style="color: var(--success);">R$ 0,00</div>
+            </div>
+            <div class="kpi-card out">
+                <span style="color: var(--text-muted); font-size:14px;">Gastos / Saídas</span>
+                <div class="kpi-value" id="kpiSaidas" style="color: var(--danger);">R$ 0,00</div>
+            </div>
+            <div class="kpi-card bal">
+                <span style="color: var(--text-muted); font-size:14px;">Saldo em Caixa</span>
+                <div class="kpi-value" id="kpiSaldo">R$ 0,00</div>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <!-- Gráfico de Linhas (Faturamento diário) -->
+            <div class="card">
+                <h3>Evolução de Vendas Diárias</h3>
+                <div class="chart-container">
+                    <canvas id="chartEvolucao"></canvas>
+                </div>
+            </div>
+            <!-- Gráfico de Pizza (Canais de Pagamento) -->
+            <div class="card">
+                <h3>Faturamento por Tipo de Pagamento</h3>
+                <div class="chart-container">
+                    <canvas id="chartPagamentos"></canvas>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    let movimentacoesDoDia = [];
+    let movimentacoesDia = [];
+    let chart1 = null, chart2 = null;
     document.getElementById('dataFechamento').valueAsDate = new Date();
 
     function switchTab(tabId) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-        
         document.getElementById(tabId).classList.add('active');
         event.currentTarget.classList.add('active');
-        
-        if(tabId === 'aba-fechamento') {
-            atualizarResumoCalculado();
-        } else if(tabId === 'aba-mensal') {
-            gerarRelatorioMensal();
-        }
+
+        if(tabId === 'aba-fechamento') calcularResumo();
+        if(tabId === 'aba-dashboard') carregarDashboard();
     }
 
-    // Fluxo da Aba 1 (Lançamentos)
-    document.getElementById('movimentacaoForm').addEventListener('submit', function(e) {
+    // Lance de movimentação
+    document.getElementById('movForm').addEventListener('submit', function(e){
         e.preventDefault();
         const tipo = document.getElementById('tipo').value;
         const pagamento = document.getElementById('pagamento').value;
         const valor = parseFloat(document.getElementById('valorMov').value) || 0;
-        const descricao = document.getElementById('descMov').value || '---';
+        const desc = document.getElementById('descMov').value || 'Geral';
 
-        movimentacoesDoDia.push({ tipo, pagamento, valor, descricao });
-        atualizarTabela();
-        document.getElementById('movimentacaoForm').reset();
+        movimentacoesDia.push({tipo, pagamento, valor, desc});
+        renderTabelaHoje();
+        document.getElementById('movForm').reset();
     });
 
-    function atualizarTabela() {
-        const tbody = document.getElementById('tabelaMovimentacoes');
+    function renderTabelaHoje() {
+        const tbody = document.getElementById('tabelaMov');
         tbody.innerHTML = '';
-        movimentacoesDoDia.forEach(m => {
-            const classeCor = m.tipo === 'Entrada' ? 'txt-success' : 'txt-danger';
-            tbody.innerHTML += `
-                <tr>
-                    <td class="${classeCor}">${m.tipo}</td>
-                    <td>${m.pagamento}</td>
-                    <td class="${classeCor}">${m.tipo==='Entrada'?'+':'-'} R$ ${m.valor.toFixed(2)}</td>
-                    <td>${m.descricao}</td>
-                </tr>
-            `;
+        movimentacoesDia.forEach(m => {
+            const cor = m.tipo === 'Entrada' ? 'var(--success)' : 'var(--danger)';
+            tbody.innerHTML += `<tr><td style="color:${cor}; font-weight:600">${m.tipo}</td><td>${m.pagamento}</td><td style="color:${cor}">R$ ${m.valor.toFixed(2)}</td></tr>`;
         });
     }
 
-    function atualizarResumoCalculado() {
-        const abertura = parseFloat(document.getElementById('abertura').value) || 0;
-        const entradas = movimentacoesDoDia.filter(m => m.tipo === 'Entrada').reduce((acc, cur) => acc + cur.valor, 0);
-        const saidas = movimentacoesDoDia.filter(m => m.tipo === 'Saída').reduce((acc, cur) => acc + cur.valor, 0);
-        const esperado = abertura + entradas - saidas;
+    // === CÁLCULO E ATUALIZAÇÃO DE CORES DINÂMICAS ===
+    function calcularResumo() {
+        const ab = parseFloat(document.getElementById('abertura').value) || 0;
+        const ent = movimentacoesDia.filter(m=>m.tipo==='Entrada').reduce((a,c)=>a+c.valor,0);
+        const sai = movimentacoesDia.filter(m=>m.tipo==='Saída').reduce((a,c)=>a+c.valor,0);
+        
+        const esperado = ab + ent - sai;
+        const realInput = document.getElementById('real').value;
+        const real = parseFloat(realInput) || 0;
+        const diferenca = real - esperado;
+        
+        document.getElementById('resEntradas').innerText = `R$ ${ent.toFixed(2)}`;
+        document.getElementById('resSaidas').innerText = `R$ ${sai.toFixed(2)}`;
+        document.getElementById('resEsperado').innerText = `R$ ${esperado.toFixed(2)}`;
 
-        document.getElementById('resumoEntradas').innerText = entradas.toFixed(2);
-        document.getElementById('resumoSaidas').innerText = saidas.toFixed(2);
-        document.getElementById('resumoEsperado').innerText = esperado.toFixed(2);
+        const containerReal = document.getElementById('containerReal');
+        
+        // Validação dinâmica das cores de fundo baseada no preenchimento
+        if (realInput === "") {
+            containerReal.style.backgroundColor = "#fffbeb"; 
+            containerReal.style.borderColor = "#fde68a";
+            containerReal.style.color = "#1f2937";
+        } else if (diferenca === 0) {
+            containerReal.style.backgroundColor = "#d1fae5"; // Verde (Perfeito)
+            containerReal.style.borderColor = "#10b981";
+            containerReal.style.color = "#065f46";
+        } else if (diferenca > 0) {
+            containerReal.style.backgroundColor = "#eff6ff"; // Azul (Sobrando)
+            containerReal.style.borderColor = "#3b82f6";
+            containerReal.style.color = "#1e40af";
+        } else {
+            containerReal.style.backgroundColor = "#fee2e2"; // Vermelho (Faltando)
+            containerReal.style.borderColor = "#ef4444";
+            containerReal.style.color = "#991b1b";
+        }
     }
 
-    // Fluxo da Aba 2 (Salvar Fechamento)
-    document.getElementById('fechamentoForm').addEventListener('submit', function(e) {
+    // Salvar fechamento definitivo
+    document.getElementById('fechamentoForm').addEventListener('submit', function(e){
         e.preventDefault();
-        const dataInput = document.getElementById('dataFechamento').value; // YYYY-MM-DD
-        const [ano, mes, dia] = dataInput.split('-');
-
-        const abertura = parseFloat(document.getElementById('abertura').value) || 0;
-        const entradas = movimentacoesDoDia.filter(m => m.tipo === 'Entrada').reduce((acc, cur) => acc + cur.valor, 0);
-        const saidas = movimentacoesDoDia.filter(m => m.tipo === 'Saída').reduce((acc, cur) => acc + cur.valor, 0);
+        const dataRaw = document.getElementById('dataFechamento').value;
+        const [ano, mes, dia] = dataRaw.split('-');
         
-        const esperado = abertura + entradas - saidas;
-        const real = parseFloat(document.getElementById('real').value) || 0;
-        const diferenca = real - esperado;
+        const ab = parseFloat(document.getElementById('abertura').value) || 0;
+        const ent = movimentacoesDia.filter(m=>m.tipo==='Entrada').reduce((a,c)=>a+c.valor,0);
+        const sai = movimentacoesDia.filter(m=>m.tipo==='Saída').reduce((a,c)=>a+c.valor,0);
+        const esp = ab + ent - sai;
+        const r = parseFloat(document.getElementById('real').value) || 0;
 
-        const registro = {
-            data: `${dia}/${mes}/${ano}`,
-            ano: ano,
-            mes: mes, // Guardado numericamente para agrupamento rápido
-            entradas: entradas,
-            saidas: saidas,
-            esperado: esperado,
-            real: real,
-            diferenca: diferenca
+        let formas = {Pix: 0, CartaoCredito: 0, CartaoDebito: 0, Dinheiro: 0};
+        movimentacoesDia.filter(m=>m.tipo==='Entrada').forEach(m => {
+            if(m.pagamento === 'Pix') formas.Pix += m.valor;
+            if(m.pagamento === 'Cartão de Crédito') formas.CartaoCredito += m.valor;
+            if(m.pagamento === 'Cartão de Débito') formas.CartaoDebito += m.valor;
+            if(m.pagamento === 'Dinheiro') formas.Dinheiro += m.valor;
+        });
+
+        const novoRegistro = {
+            data: `${dia}/${mes}`,
+            entradas: ent,
+            saidas: sai,
+            esperado: esp,
+            real: r,
+            diferenca: r - esp,
+            formas: formas
         };
 
-        let historico = JSON.parse(localStorage.getItem('bancoCaixaV3')) || [];
-        historico.unshift(registro);
-        localStorage.setItem('bancoCaixaV3', JSON.stringify(historico));
+        let db = JSON.parse(localStorage.getItem('dbCaixaDash')) || [];
+        db.unshift(novoRegistro);
+        localStorage.setItem('dbCaixaDash', JSON.stringify(db));
 
-        const resDiv = document.getElementById('resultadoFechamento');
-        resDiv.style.display = 'block';
-        resDiv.style.backgroundColor = diferenca === 0 ? '#d4edda' : (diferenca > 0 ? '#d4edda' : '#f8d7da');
-        resDiv.style.color = diferenca >= 0 ? '#155724' : '#721c24';
-        resDiv.innerHTML = diferenca === 0 ? "Caixa Perfeito!" : `Fechado com diferença de R$ ${diferenca.toFixed(2)}`;
-
-        movimentacoesDoDia = [];
-        atualizarTabela();
+        movimentacoesDia = [];
+        renderTabelaHoje();
         document.getElementById('fechamentoForm').reset();
         document.getElementById('dataFechamento').valueAsDate = new Date();
+        calcularResumo(); // Reseta a cor do campo de conferência
         renderHistorico();
+        alert('Caixa salvo e integrado aos gráficos!');
     });
 
     function renderHistorico() {
-        const historico = JSON.parse(localStorage.getItem('bancoCaixaV3')) || [];
-        const histDiv = document.getElementById('historicoGeral');
-        histDiv.innerHTML = '';
-
-        if(historico.length === 0) {
-            histDiv.innerHTML = '<p style="color: #777; text-align: center;">Nenhum fechamento no histórico.</p>';
-            return;
-        }
-
-        historico.forEach(item => {
-            const status = item.diferenca === 0 ? 'Perfeito' : (item.diferenca > 0 ? 'Sobrando' : 'Faltando');
-            const classeStatus = status === 'Faltando' ? 'item-danger' : 'item-success';
-            histDiv.innerHTML += `
-                <div class="history-item ${classeStatus}">
-                    <strong>Data: ${item.data}</strong> — Status: ${status}<br>
-                    <small>Entradas: R$ ${item.entradas.toFixed(2)} | Saídas: R$ ${item.saidas.toFixed(2)}</small><br>
-                    <small>Calculado: R$ ${item.esperado.toFixed(2)} | Conferido: R$ ${item.real.toFixed(2)}</small><br>
-                    <small style="font-weight:bold; color:${item.diferenca < 0?'var(--danger)':'var(--success)'}">Diferença: R$ ${item.diferenca.toFixed(2)}</small>
-                </div>
-            `;
+        const db = JSON.parse(localStorage.getItem('dbCaixaDash')) || [];
+        const div = document.getElementById('historicoGeral');
+        div.innerHTML = '';
+        
+        db.forEach(item => {
+            const cor = item.diferenca < 0 ? 'var(--danger)' : 'var(--success)';
+            div.innerHTML += `
+                <div style="background:rgba(0,0,0,0.02); padding:12px; border-radius:8px; margin-bottom:10px; border-left:4px solid ${cor}; font-size:13px;">
+                    <strong>Data: ${item.data}</strong> | Entradas: R$ ${item.entradas.toFixed(2)} | Saídas: R$ ${item.saidas.toFixed(2)}<br>
+                    <span style="color:${cor}; font-weight:bold;">Diferença: R$ ${item.diferenca.toFixed(2)}</span>
+                </div>`;
         });
     }
 
-    // Fluxo da Aba 3 (Relatório Mensal Automático)
-    function gerarRelatorioMensal() {
-        const historico = JSON.parse(localStorage.getItem('bancoCaixaV3')) || [];
-        const container = document.getElementById('containerMensal');
-        container.innerHTML = '';
+    function carregarDashboard() {
+        const db = [...(JSON.parse(localStorage.getItem('dbCaixaDash')) || [])].reverse();
 
-        if (historico.length === 0) {
-            container.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #777;">Feche pelo menos um dia para gerar o relatório mensal.</p>';
-            return;
-        }
+        let totalEntradas = 0, totalSaidas = 0, totalPix = 0, totalCred = 0, totalDeb = 0, totalDin = 0;
+        let labelsEvolucao = [];
+        let dadosEvolucao = [];
 
-        const nomesMeses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-        let resumoMeses = {};
-
-        // Agrupar os registros do histórico por Ano-Mês
-        historico.forEach(item => {
-            const chave = `${item.ano}-${item.mes}`;
-            if (!resumoMeses[chave]) {
-                resumoMeses[chave] = {
-                    nome: `${nomesMeses[parseInt(item.mes) - 1]} / ${item.ano}`,
-                    totalEntradas: 0,
-                    totalSaidas: 0,
-                    totalDiferencas: 0,
-                    diasContados: 0
-                };
-            }
-            resumoMeses[chave].totalEntradas += item.entradas;
-            resumoMeses[chave].totalSaidas += item.saidas;
-            resumoMeses[chave].totalDiferencas += item.diferenca;
-            resumoMeses[chave].diasContados++;
-        });
-
-        // Montar os cards visuais na tela
-        Object.keys(resumoMeses).sort().reverse().forEach(chave => {
-            const dados = resumoMeses[chave];
-            const saldoLiquido = dados.totalEntradas - dados.totalSaidas;
+        db.forEach(item => {
+            totalEntradas += item.entradas;
+            totalSaidas += item.saidas;
+            totalPix += item.formas.Pix || 0;
+            totalCred += item.formas.CartaoCredito || 0;
+            totalDeb += item.formas.CartaoDebito || 0;
+            totalDin += item.formas.Dinheiro || 0;
             
-            container.innerHTML += `
-                <div class="month-card">
-                    <div class="month-title">${dados.nome}</div>
-                    <div class="month-stat"><span>Dias Fechados:</span> <strong>${dados.diasContados}</strong></div>
-                    <div class="month-stat"><span>Faturamento (Entradas):</span> <span class="txt-success">R$ ${dados.totalEntradas.toFixed(2)}</span></div>
-                    <div class="month-stat"><span>Despesas (Saídas):</span> <span class="txt-danger">R$ ${dados.totalSaidas.toFixed(2)}</span></div>
-                    <div class="month-stat" style="border-top: 1px dashed #edf2f7; padding-top: 5px; margin-top: 5px;">
-                        <span>Saldo Líquido:</span> <strong>R$ ${saldoLiquido.toFixed(2)}</strong>
-                    </div>
-                    <div class="month-stat">
-                        <span>Erros de Caixa (Acumulado):</span> 
-                        <strong style="color:${dados.totalDiferencas < 0 ? 'var(--danger)' : 'var(--success)'}">R$ ${dados.totalDiferencas.toFixed(2)}</strong>
-                    </div>
-                </div>
-            `;
+            labelsEvolucao.push(item.data);
+            dadosEvolucao.push(item.entradas);
+        });
+
+        document.getElementById('kpiEntradas').innerText = `R$ ${totalEntradas.toFixed(2)}`;
+        document.getElementById('kpiSaidas').innerText = `R$ ${totalSaidas.toFixed(2)}`;
+        document.getElementById('kpiSaldo').innerText = `R$ ${(totalEntradas - totalSaidas).toFixed(2)}`;
+
+        if(chart1) chart1.destroy();
+        if(chart2) chart2.destroy();
+
+        const ctx1 = document.getElementById('chartEvolucao').getContext('2d');
+        chart1 = new Chart(ctx1, {
+            type: 'line',
+            data: {
+                labels: labelsEvolucao.length ? labelsEvolucao : ['Sem dados'],
+                datasets: [{
+                    label: 'Faturamento por Dia (R$)',
+                    data: dadosEvolucao.length ? dadosEvolucao : [0],
+                    borderColor: '#4f46e5',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    borderWidth: 3
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        const ctx2 = document.getElementById('chartPagamentos').getContext('2d');
+        chart2 = new Chart(ctx2, {
+            type: 'doughnut',
+            data: {
+                labels: ['Pix', 'Crédito', 'Débito', 'Dinheiro'],
+                datasets: [{
+                    data: [totalPix, totalCred, totalDeb, totalDin],
+                    backgroundColor: ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b'],
+                    borderWidth: 2
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
         });
     }
 
-    function limparTodoHistorico() {
-        if(confirm("Deseja apagar permanentemente todo o histórico? Isso também apagará os relatórios mensais.")) {
-            localStorage.removeItem('bancoCaixaV3');
+    function limparTudo() {
+        if(confirm('Tem certeza que deseja deletar todo o seu histórico e zerar os gráficos?')) {
+            localStorage.removeItem('dbCaixaDash');
             renderHistorico();
-            if(document.getElementById('aba-mensal').classList.contains('active')) gerarRelatorioMensal();
+            carregarDashboard();
         }
     }
 
-    // Inicializar carregamento de dados anteriores
+    // === MODO ESCURO DINÂMICO POR HORÁRIO ===
+    const horaAtual = new Date().getHours();
+    if (horaAtual >= 18 || horaAtual < 6) { 
+        document.documentElement.style.setProperty('--bg-paged', '#111827');
+        document.documentElement.style.setProperty('--surface', '#1f2937');
+        document.documentElement.style.setProperty('--text-main', '#f9fafb');
+        document.documentElement.style.setProperty('--border', '#374151');
+    }
+
+    // Inicialização
     renderHistorico();
 </script>
-
 </body>
 </html>
