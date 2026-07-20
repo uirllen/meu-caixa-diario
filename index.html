@@ -3,112 +3,225 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Fluxo e Fechamento de Caixa</title>
+    <title>Sistema de Gestão de Caixa Diário</title>
     <style>
-        :root { --primary: #2c3e50; --success: #27ae60; --danger: #c0392b; --light: #ecf0f1; }
+        :root { --primary: #2c3e50; --success: #27ae60; --danger: #c0392b; --light: #ecf0f1; --blue: #2980b9; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; margin: 0; padding: 20px; color: #333; }
-        .wrapper { max-width: 900px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        @media (max-width: 768px) { .wrapper { grid-template-columns: 1fr; } }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        h2, h3 { margin-top: 0; color: var(--primary); border-bottom: 2px solid var(--light); padding-bottom: 10px; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        h2, h3 { margin-top: 0; color: var(--primary); }
+        
+        /* Sistema de Abas */
+        .tabs { display: flex; border-bottom: 2px solid var(--light); margin-bottom: 20px; }
+        .tab-btn { padding: 12px 24px; border: none; background: none; font-size: 16px; font-weight: bold; cursor: pointer; color: #7f8c8d; transition: 0.2s; }
+        .tab-btn.active { color: var(--blue); border-bottom: 3px solid var(--blue); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+
         .form-group { margin-bottom: 12px; }
         label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px; }
         input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 15px; }
-        button { width: 100%; padding: 12px; background: var(--success); color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        button:hover { background: #219653; }
-        .btn-clear { background: #7f8c8d; margin-top: 10px; }
-        .btn-clear:hover { background: #95a5a6; }
-        .result-box { margin-top: 15px; padding: 15px; border-radius: 4px; font-weight: bold; text-align: center; display: none; }
-        .history-list { max-height: 400px; overflow-y: auto; }
+        
+        button { width: 100%; padding: 12px; background: var(--blue); color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button:hover { opacity: 0.9; }
+        .btn-success { background: var(--success); }
+        .btn-danger { background: var(--danger); margin-top: 15px; }
+
+        /* Estilo da Tabela e Histórico */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+        th, td { padding: 10px; border: 1px solid var(--light); text-align: left; }
+        th { background-color: #f2f2f2; }
+        .txt-success { color: var(--success); font-weight: bold; }
+        .txt-danger { color: var(--danger); font-weight: bold; }
+
+        .history-list { max-height: 300px; overflow-y: auto; margin-top: 15px; }
         .history-item { background: var(--light); padding: 12px; border-radius: 4px; margin-bottom: 10px; font-size: 14px; border-left: 5px solid #bdc3c7; }
         .item-success { border-left-color: var(--success); }
         .item-danger { border-left-color: var(--danger); }
-        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .res-box { padding: 15px; border-radius: 4px; font-weight: bold; text-align: center; margin-top: 15px; display: none; }
     </style>
 </head>
 <body>
 
-<div class="wrapper">
-    <!-- COLUNA 1: FORMULÁRIO DE LANÇAMENTO -->
-    <div class="card">
-        <h2>Fechamento do Dia</h2>
-        <form id="caixaForm">
-            <div class="form-group">
-                <label for="data">Data do Caixa:</label>
-                <input type="date" id="data" required>
-            </div>
-            <div class="form-group">
-                <label for="abertura">Saldo Inicial / Troco em Gaveta (R$):</label>
-                <input type="number" id="abertura" step="0.01" value="0.00" required>
-            </div>
-            
-            <h3 style="font-size: 16px; margin-top: 15px;">Entradas Detalhadas</h3>
-            <div class="grid-3">
-                <div class="form-group">
-                    <label style="font-size: 12px;">Vendas Pix</label>
-                    <input type="number" id="vendasPix" step="0.01" value="0.00">
-                </div>
-                <div class="form-group">
-                    <label style="font-size: 12px;">Vendas Cartão</label>
-                    <input type="number" id="vendasCartao" step="0.01" value="0.00">
-                </div>
-                <div class="form-group">
-                    <label style="font-size: 12px;">Vendas Dinheiro</label>
-                    <input type="number" id="vendasDinheiro" step="0.01" value="0.00">
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="saidas">Total de Saídas (Sangrias / Despesas pagas):</label>
-                <input type="number" id="saidas" step="0.01" value="0.00">
-            </div>
-            
-            <div class="form-group" style="background: #fcf8e3; padding: 10px; border-radius: 4px;">
-                <label for="real"><strong>Conferência Física (O que tem na gaveta + comprovantes):</strong></label>
-                <input type="number" id="real" step="0.01" placeholder="Some tudo e digite aqui" required>
-            </div>
-
-            <button type="submit">Salvar e Fechar Caixa</button>
-        </form>
-        <div id="resultado" class="result-box"></div>
+<div class="container">
+    <!-- Navegação por Abas -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('aba-lancamentos')">1. Lançar Movimentações</button>
+        <button class="tab-btn" onclick="switchTab('aba-fechamento')">2. Fechamento e Histórico</button>
     </div>
 
-    <!-- COLUNA 2: BANCO DE DADOS LOCAL (HISTÓRICO) -->
-    <div class="card">
-        <h2>Histórico de Fechamentos</h2>
-        <div class="history-list" id="historico">
-            <!-- Os dados salvos vão aparecer aqui -->
+    <!-- ABA 1: LANÇAMENTOS DO DIA -->
+    <div id="aba-lancamentos" class="tab-content active">
+        <div class="grid">
+            <div>
+                <h3>Registrar Nova Movimentação</h3>
+                <form id="movimentacaoForm">
+                    <div class="form-group">
+                        <label for="tipo">Tipo de Registro:</label>
+                        <select id="tipo" required>
+                            <option value="Entrada">Entrada (Venda / Recebimento)</option>
+                            <option value="Saída">Saída (Despesa / Pagamento / Sangria)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="pagamento">Forma de Pagamento:</label>
+                        <select id="pagamento" required>
+                            <option value="Pix">Pix</option>
+                            <option value="Cartão de Crédito">Cartão de Crédito</option>
+                            <option value="Cartão de Débito">Cartão de Débito</option>
+                            <option value="Dinheiro">Dinheiro Físico</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="valorMov">Valor (R$):</label>
+                        <input type="number" id="valorMov" step="0.01" required placeholder="0,00">
+                    </div>
+                    <div class="form-group">
+                        <label for="descMov">Descrição opcional (Ex: Cliente X, Mercado, etc):</label>
+                        <input type="text" id="descMov" placeholder="Ex: Venda de produto">
+                    </div>
+                    <button type="submit">Adicionar ao Fluxo</button>
+                </form>
+            </div>
+            <div>
+                <h3>Movimentações de Hoje</h3>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Pagamento</th>
+                                <th>Valor</th>
+                                <th>Descrição</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaMovimentacoes">
+                            <!-- Inserido via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
-        <button class="button btn-clear" onclick="limparHistorico()">Limpar Todo o Histórico</button>
+    </div>
+
+    <!-- ABA 2: FECHAMENTO DO DIA -->
+    <div id="aba-fechamento" class="tab-content">
+        <div class="grid">
+            <div>
+                <h3>Conferência Final</h3>
+                <form id="fechamentoForm">
+                    <div class="form-group">
+                        <label for="dataFechamento">Data do Caixa:</label>
+                        <input type="date" id="dataFechamento" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="abertura">Saldo Inicial / Troco de Abertura (R$):</label>
+                        <input type="number" id="abertura" step="0.01" value="0.00" oninput="atualizarResumoCalculado()" required>
+                    </div>
+                    <div style="background: #f8f9fa; padding: 12px; border-radius: 4px; margin-bottom: 15px; border-left: 4px solid var(--blue);">
+                        <strong>Resumo Calculado por Lançamentos:</strong><br>
+                        <small>Total Entradas: R$ <span id="resumoEntradas">0.00</span></small><br>
+                        <small>Total Saídas: R$ <span id="resumoSaidas">0.00</span></small><br>
+                        <strong>Saldo Esperado em Caixa: R$ <span id="resumoEsperado">0.00</span></strong>
+                    </div>
+                    <div class="form-group" style="background: #fcf8e3; padding: 10px; border-radius: 4px;">
+                        <label for="real"><strong>Conferência Física (Quanto tem na gaveta + comprovantes):</strong></label>
+                        <input type="number" id="real" step="0.01" placeholder="Conte tudo e digite aqui" required>
+                    </div>
+                    <button type="submit" class="btn-success">Salvar e Fechar Caixa do Dia</button>
+                </form>
+                <div id="resultadoFechamento" class="res-box"></div>
+            </div>
+            <div>
+                <h3>Histórico de Dias Anteriores</h3>
+                <div class="history-list" id="historicoGeral"></div>
+                <button class="btn-danger" onclick="limparTodoHistorico()">Apagar Histórico Antigo</button>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
-    // Define a data de hoje automaticamente no campo
-    document.getElementById('data').valueAsDate = new Date();
+    // Memória volátil do dia atual e persistente do histórico
+    let movimentacoesDoDia = [];
+    document.getElementById('dataFechamento').valueAsDate = new Date();
 
-    // Carregar dados salvos ao abrir a página
-    document.addEventListener("DOMContentLoaded", renderHistorico);
+    // Alternar abas
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        
+        document.getElementById(tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+        
+        if(tabId === 'aba-fechamento') {
+            atualizarResumoCalculado();
+        }
+    }
 
-    document.getElementById('caixaForm').addEventListener('submit', function(e) {
+    // Adicionar movimentação temporária na tabela
+    document.getElementById('movimentacaoForm').addEventListener('submit', function(e) {
         e.preventDefault();
+        
+        const tipo = document.getElementById('tipo').value;
+        const pagamento = document.getElementById('pagamento').value;
+        const valor = parseFloat(document.getElementById('valorMov').value) || 0;
+        const descricao = document.getElementById('descMov').value || '---';
 
-        const dataInput = document.getElementById('data').value;
+        movimentacoesDoDia.push({ tipo, pagamento, valor, descricao });
+        
+        atualizarTabela();
+        document.getElementById('movimentacaoForm').reset();
+    });
+
+    function atualizarTabela() {
+        const tbody = document.getElementById('tabelaMovimentacoes');
+        tbody.innerHTML = '';
+        
+        movimentacoesDoDia.forEach(m => {
+            const classeCor = m.tipo === 'Entrada' ? 'txt-success' : 'txt-danger';
+            const sinal = m.tipo === 'Entrada' ? '+' : '-';
+            tbody.innerHTML += `
+                <tr>
+                    <td class="${classeCor}">${m.tipo}</td>
+                    <td>${m.pagamento}</td>
+                    <td class="${classeCor}">${sinal} R$ ${m.valor.toFixed(2)}</td>
+                    <td>${m.descricao}</td>
+                </tr>
+            `;
+        });
+    }
+
+    function atualizarResumoCalculado() {
+        const abertura = parseFloat(document.getElementById('abertura').value) || 0;
+        
+        const entradas = movimentacoesDoDia.filter(m => m.tipo === 'Entrada').reduce((acc, cur) => acc + cur.valor, 0);
+        const saidas = movimentacoesDoDia.filter(m => m.tipo === 'Saída').reduce((acc, cur) => acc + cur.valor, 0);
+        const esperado = abertura + entradas - saidas;
+
+        document.getElementById('resumoEntradas').innerText = entradas.toFixed(2);
+        document.getElementById('resumoSaidas').innerText = saidas.toFixed(2);
+        document.getElementById('resumoEsperado').innerText = esperado.toFixed(2);
+    }
+
+    // Fechar o caixa e salvar de forma permanente no histórico
+    document.getElementById('fechamentoForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const dataInput = document.getElementById('dataFechamento').value;
         const [ano, mes, dia] = dataInput.split('-');
         const dataFormatada = `${dia}/${mes}/${ano}`;
 
         const abertura = parseFloat(document.getElementById('abertura').value) || 0;
-        const pix = parseFloat(document.getElementById('vendasPix').value) || 0;
-        const cartao = parseFloat(document.getElementById('vendasCartao').value) || 0;
-        const dinheiro = parseFloat(document.getElementById('vendasDinheiro').value) || 0;
-        const saidas = parseFloat(document.getElementById('saidas').value) || 0;
+        const entradas = movimentacoesDoDia.filter(m => m.tipo === 'Entrada').reduce((acc, cur) => acc + cur.valor, 0);
+        const saidas = movimentacoesDoDia.filter(m => m.tipo === 'Saída').reduce((acc, cur) => acc + cur.valor, 0);
+        
+        const esperado = abertura + entradas - saidas;
         const real = parseFloat(document.getElementById('real').value) || 0;
-
-        const totalEntradas = pix + cartao + dinheiro;
-        const esperado = abertura + totalEntradas - saidas;
         const diferenca = real - esperado;
 
-        // Criar o objeto de registro do dia
         const registro = {
             data: dataFormatada,
             esperado: esperado.toFixed(2),
@@ -117,60 +230,65 @@
             status: diferenca === 0 ? 'Perfeito' : (diferenca > 0 ? 'Sobrando' : 'Faltando')
         };
 
-        // Salvar no Banco de Dados Local (LocalStorage)
-        let banco = JSON.parse(localStorage.getItem('historicoCaixa')) || [];
-        banco.unshift(registro); // Adiciona no início da lista
-        localStorage.setItem('historicoCaixa', JSON.stringify(banco));
+        let historico = JSON.parse(localStorage.getItem('bancoCaixaCompleto')) || [];
+        historico.unshift(registro);
+        localStorage.setItem('bancoCaixaCompleto', JSON.stringify(historico));
 
-        // Mostrar feedback na tela
-        const resDiv = document.getElementById('resultado');
+        // Mostrar resultado na tela
+        const resDiv = document.getElementById('resultadoFechamento');
         resDiv.style.display = 'block';
-        if(diferenca >= 0) {
-            resDiv.style.backgroundColor = '#d4edda';
-            resDiv.style.color = '#155724';
-            resDiv.innerHTML = `Salvo com Sucesso! Diferença: R$ ${diferenca.toFixed(2)}`;
+        if(diferenca === 0) {
+            resDiv.style.backgroundColor = '#d4edda'; resDiv.style.color = '#155724';
+            resDiv.innerHTML = `Sucesso! Caixa fechou Perfeito.`;
+        } else if (diferenca > 0) {
+            resDiv.style.backgroundColor = '#d4edda'; resDiv.style.color = '#155724';
+            resDiv.innerHTML = `Salvo! Sobraram R$ ${diferenca.toFixed(2)}`;
         } else {
-            resDiv.style.backgroundColor = '#f8d7da';
-            resDiv.style.color = '#721c24';
-            resDiv.innerHTML = `Salvo com Alerta! Faltando: R$ ${diferenca.toFixed(2)}`;
+            resDiv.style.backgroundColor = '#f8d7da'; resDiv.style.color = '#721c24';
+            resDiv.innerHTML = `Alerta! Faltaram R$ ${Math.abs(diferenca).toFixed(2)}`;
         }
 
+        // Limpar os lançamentos do dia para o próximo encerramento
+        movimentacoesDoDia = [];
+        atualizarTabela();
+        document.getElementById('fechamentoForm').reset();
+        document.getElementById('dataFechamento').valueAsDate = new Date();
+        
         renderHistorico();
-        document.getElementById('caixaForm').reset();
-        document.getElementById('data').valueAsDate = new Date();
     });
 
     function renderHistorico() {
-        const banco = JSON.parse(localStorage.getItem('historicoCaixa')) || [];
-        const histDiv = document.getElementById('historico');
+        const historico = JSON.parse(localStorage.getItem('bancoCaixaCompleto')) || [];
+        const histDiv = document.getElementById('historicoGeral');
         histDiv.innerHTML = '';
 
-        if(banco.length === 0) {
-            histDiv.innerHTML = '<p style="color: #777; text-align: center;">Nenhum fechamento registrado ainda.</p>';
+        if(historico.length === 0) {
+            histDiv.innerHTML = '<p style="color: #777; text-align: center;">Nenhum fechamento no histórico.</p>';
             return;
         }
 
-        banco.forEach(item => {
+        historico.forEach(item => {
             const classeStatus = item.status === 'Faltando' ? 'item-danger' : 'item-success';
-            const corDiferenca = item.status === 'Faltando' ? 'color: var(--danger);' : 'color: var(--success);';
-            
+            const corDif = item.status === 'Faltando' ? 'color: var(--danger);' : 'color: var(--success);';
             histDiv.innerHTML += `
                 <div class="history-item ${classeStatus}">
-                    <strong>Data: ${item.data}</strong> — Status: <span>${item.status}</span><br>
-                    <small>Esperado: R$ ${item.esperado} | Conferido: R$ ${item.real}</small><br>
-                    <small style="${corDiferenca}">Diferença: R$ ${item.diferenca}</small>
+                    <strong>Data: ${item.data}</strong> — Status: ${item.status}<br>
+                    <small>Calculado: R$ ${item.esperado} | Conferido: R$ ${item.real}</small><br>
+                    <small style="${corDif}">Diferença: R$ ${item.diferenca}</small>
                 </div>
             `;
         });
     }
 
-    function limparHistorico() {
-        if(confirm("Tem certeza que deseja apagar todo o histórico de fechamentos?")) {
-            localStorage.removeItem('historicoCaixa');
+    function limparTodoHistorico() {
+        if(confirm("Deseja apagar permanentemente o histórico de fechamentos salvos?")) {
+            localStorage.removeItem('bancoCaixaCompleto');
             renderHistorico();
-            document.getElementById('resultado').style.display = 'none';
         }
     }
+
+    // Inicialização
+    renderHistorico();
 </script>
 
 </body>
