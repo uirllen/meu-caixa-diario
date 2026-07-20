@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Fluxo e Fechamento de Caixa</title>
+    <style>
+        :root { --primary: #2c3e50; --success: #27ae60; --danger: #c0392b; --light: #ecf0f1; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; margin: 0; padding: 20px; color: #333; }
+        .wrapper { max-width: 900px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .wrapper { grid-template-columns: 1fr; } }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        h2, h3 { margin-top: 0; color: var(--primary); border-bottom: 2px solid var(--light); padding-bottom: 10px; }
+        .form-group { margin-bottom: 12px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 15px; }
+        button { width: 100%; padding: 12px; background: var(--success); color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button:hover { background: #219653; }
+        .btn-clear { background: #7f8c8d; margin-top: 10px; }
+        .btn-clear:hover { background: #95a5a6; }
+        .result-box { margin-top: 15px; padding: 15px; border-radius: 4px; font-weight: bold; text-align: center; display: none; }
+        .history-list { max-height: 400px; overflow-y: auto; }
+        .history-item { background: var(--light); padding: 12px; border-radius: 4px; margin-bottom: 10px; font-size: 14px; border-left: 5px solid #bdc3c7; }
+        .item-success { border-left-color: var(--success); }
+        .item-danger { border-left-color: var(--danger); }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <!-- COLUNA 1: FORMULÁRIO DE LANÇAMENTO -->
+    <div class="card">
+        <h2>Fechamento do Dia</h2>
+        <form id="caixaForm">
+            <div class="form-group">
+                <label for="data">Data do Caixa:</label>
+                <input type="date" id="data" required>
+            </div>
+            <div class="form-group">
+                <label for="abertura">Saldo Inicial / Troco em Gaveta (R$):</label>
+                <input type="number" id="abertura" step="0.01" value="0.00" required>
+            </div>
+            
+            <h3 style="font-size: 16px; margin-top: 15px;">Entradas Detalhadas</h3>
+            <div class="grid-3">
+                <div class="form-group">
+                    <label style="font-size: 12px;">Vendas Pix</label>
+                    <input type="number" id="vendasPix" step="0.01" value="0.00">
+                </div>
+                <div class="form-group">
+                    <label style="font-size: 12px;">Vendas Cartão</label>
+                    <input type="number" id="vendasCartao" step="0.01" value="0.00">
+                </div>
+                <div class="form-group">
+                    <label style="font-size: 12px;">Vendas Dinheiro</label>
+                    <input type="number" id="vendasDinheiro" step="0.01" value="0.00">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="saidas">Total de Saídas (Sangrias / Despesas pagas):</label>
+                <input type="number" id="saidas" step="0.01" value="0.00">
+            </div>
+            
+            <div class="form-group" style="background: #fcf8e3; padding: 10px; border-radius: 4px;">
+                <label for="real"><strong>Conferência Física (O que tem na gaveta + comprovantes):</strong></label>
+                <input type="number" id="real" step="0.01" placeholder="Some tudo e digite aqui" required>
+            </div>
+
+            <button type="submit">Salvar e Fechar Caixa</button>
+        </form>
+        <div id="resultado" class="result-box"></div>
+    </div>
+
+    <!-- COLUNA 2: BANCO DE DADOS LOCAL (HISTÓRICO) -->
+    <div class="card">
+        <h2>Histórico de Fechamentos</h2>
+        <div class="history-list" id="historico">
+            <!-- Os dados salvos vão aparecer aqui -->
+        </div>
+        <button class="button btn-clear" onclick="limparHistorico()">Limpar Todo o Histórico</button>
+    </div>
+</div>
+
+<script>
+    // Define a data de hoje automaticamente no campo
+    document.getElementById('data').valueAsDate = new Date();
+
+    // Carregar dados salvos ao abrir a página
+    document.addEventListener("DOMContentLoaded", renderHistorico);
+
+    document.getElementById('caixaForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const dataInput = document.getElementById('data').value;
+        const [ano, mes, dia] = dataInput.split('-');
+        const dataFormatada = `${dia}/${mes}/${ano}`;
+
+        const abertura = parseFloat(document.getElementById('abertura').value) || 0;
+        const pix = parseFloat(document.getElementById('vendasPix').value) || 0;
+        const cartao = parseFloat(document.getElementById('vendasCartao').value) || 0;
+        const dinheiro = parseFloat(document.getElementById('vendasDinheiro').value) || 0;
+        const saidas = parseFloat(document.getElementById('saidas').value) || 0;
+        const real = parseFloat(document.getElementById('real').value) || 0;
+
+        const totalEntradas = pix + cartao + dinheiro;
+        const esperado = abertura + totalEntradas - saidas;
+        const diferenca = real - esperado;
+
+        // Criar o objeto de registro do dia
+        const registro = {
+            data: dataFormatada,
+            esperado: esperado.toFixed(2),
+            real: real.toFixed(2),
+            diferenca: diferenca.toFixed(2),
+            status: diferenca === 0 ? 'Perfeito' : (diferenca > 0 ? 'Sobrando' : 'Faltando')
+        };
+
+        // Salvar no Banco de Dados Local (LocalStorage)
+        let banco = JSON.parse(localStorage.getItem('historicoCaixa')) || [];
+        banco.unshift(registro); // Adiciona no início da lista
+        localStorage.setItem('historicoCaixa', JSON.stringify(banco));
+
+        // Mostrar feedback na tela
+        const resDiv = document.getElementById('resultado');
+        resDiv.style.display = 'block';
+        if(diferenca >= 0) {
+            resDiv.style.backgroundColor = '#d4edda';
+            resDiv.style.color = '#155724';
+            resDiv.innerHTML = `Salvo com Sucesso! Diferença: R$ ${diferenca.toFixed(2)}`;
+        } else {
+            resDiv.style.backgroundColor = '#f8d7da';
+            resDiv.style.color = '#721c24';
+            resDiv.innerHTML = `Salvo com Alerta! Faltando: R$ ${diferenca.toFixed(2)}`;
+        }
+
+        renderHistorico();
+        document.getElementById('caixaForm').reset();
+        document.getElementById('data').valueAsDate = new Date();
+    });
+
+    function renderHistorico() {
+        const banco = JSON.parse(localStorage.getItem('historicoCaixa')) || [];
+        const histDiv = document.getElementById('historico');
+        histDiv.innerHTML = '';
+
+        if(banco.length === 0) {
+            histDiv.innerHTML = '<p style="color: #777; text-align: center;">Nenhum fechamento registrado ainda.</p>';
+            return;
+        }
+
+        banco.forEach(item => {
+            const classeStatus = item.status === 'Faltando' ? 'item-danger' : 'item-success';
+            const corDiferenca = item.status === 'Faltando' ? 'color: var(--danger);' : 'color: var(--success);';
+            
+            histDiv.innerHTML += `
+                <div class="history-item ${classeStatus}">
+                    <strong>Data: ${item.data}</strong> — Status: <span>${item.status}</span><br>
+                    <small>Esperado: R$ ${item.esperado} | Conferido: R$ ${item.real}</small><br>
+                    <small style="${corDiferenca}">Diferença: R$ ${item.diferenca}</small>
+                </div>
+            `;
+        });
+    }
+
+    function limparHistorico() {
+        if(confirm("Tem certeza que deseja apagar todo o histórico de fechamentos?")) {
+            localStorage.removeItem('historicoCaixa');
+            renderHistorico();
+            document.getElementById('resultado').style.display = 'none';
+        }
+    }
+</script>
+
+</body>
+</html>
