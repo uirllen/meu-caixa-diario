@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gestão de Caixa Diário</title>
+    <title>Sistema de Gestão de Caixa Completo</title>
     <style>
-        :root { --primary: #2c3e50; --success: #27ae60; --danger: #c0392b; --light: #ecf0f1; --blue: #2980b9; }
+        :root { --primary: #2c3e50; --success: #27ae60; --danger: #c0392b; --light: #ecf0f1; --blue: #2980b9; --dark: #34495e; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; margin: 0; padding: 20px; color: #333; }
-        .container { max-width: 900px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         h2, h3 { margin-top: 0; color: var(--primary); }
         
         /* Sistema de Abas */
-        .tabs { display: flex; border-bottom: 2px solid var(--light); margin-bottom: 20px; }
-        .tab-btn { padding: 12px 24px; border: none; background: none; font-size: 16px; font-weight: bold; cursor: pointer; color: #7f8c8d; transition: 0.2s; }
+        .tabs { display: flex; border-bottom: 2px solid var(--light); margin-bottom: 20px; flex-wrap: wrap; }
+        .tab-btn { padding: 12px 20px; border: none; background: none; font-size: 15px; font-weight: bold; cursor: pointer; color: #7f8c8d; transition: 0.2s; }
         .tab-btn.active { color: var(--blue); border-bottom: 3px solid var(--blue); }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
@@ -29,7 +29,7 @@
         .btn-success { background: var(--success); }
         .btn-danger { background: var(--danger); margin-top: 15px; }
 
-        /* Estilo da Tabela e Histórico */
+        /* Tabelas e Cards de Resumo */
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
         th, td { padding: 10px; border: 1px solid var(--light); text-align: left; }
         th { background-color: #f2f2f2; }
@@ -41,6 +41,12 @@
         .item-success { border-left-color: var(--success); }
         .item-danger { border-left-color: var(--danger); }
         .res-box { padding: 15px; border-radius: 4px; font-weight: bold; text-align: center; margin-top: 15px; display: none; }
+
+        /* Cards do Mensal */
+        .monthly-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-top: 15px; }
+        .month-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .month-title { font-size: 16px; font-weight: bold; color: var(--dark); border-bottom: 1px solid #edf2f7; padding-bottom: 5px; margin-bottom: 10px; text-transform: capitalize; }
+        .month-stat { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 6px; }
     </style>
 </head>
 <body>
@@ -49,7 +55,8 @@
     <!-- Navegação por Abas -->
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('aba-lancamentos')">1. Lançar Movimentações</button>
-        <button class="tab-btn" onclick="switchTab('aba-fechamento')">2. Fechamento e Histórico</button>
+        <button class="tab-btn" onclick="switchTab('aba-fechamento')">2. Fechamento Diário</button>
+        <button class="tab-btn" onclick="switchTab('aba-mensal')">3. Relatório Mensal 📊</button>
     </div>
 
     <!-- ABA 1: LANÇAMENTOS DO DIA -->
@@ -79,8 +86,8 @@
                         <input type="number" id="valorMov" step="0.01" required placeholder="0,00">
                     </div>
                     <div class="form-group">
-                        <label for="descMov">Descrição opcional (Ex: Cliente X, Mercado, etc):</label>
-                        <input type="text" id="descMov" placeholder="Ex: Venda de produto">
+                        <label for="descMov">Descrição opcional:</label>
+                        <input type="text" id="descMov" placeholder="Ex: Venda cliente X">
                     </div>
                     <button type="submit">Adicionar ao Fluxo</button>
                 </form>
@@ -97,9 +104,7 @@
                                 <th>Descrição</th>
                             </tr>
                         </thead>
-                        <tbody id="tabelaMovimentacoes">
-                            <!-- Inserido via JS -->
-                        </tbody>
+                        <tbody id="tabelaMovimentacoes"></tbody>
                     </table>
                 </div>
             </div>
@@ -141,14 +146,21 @@
             </div>
         </div>
     </div>
+
+    <!-- ABA 3: RELATÓRIO MENSAL AUTOMÁTICO -->
+    <div id="aba-mensal" class="tab-content">
+        <h3>Fechamento Acumulado por Mês</h3>
+        <p style="color: #666; font-size: 14px;">Calculado automaticamente com base nos dias salvos no histórico.</p>
+        <div class="monthly-grid" id="containerMensal">
+            <!-- Gerado via JavaScript -->
+        </div>
+    </div>
 </div>
 
 <script>
-    // Memória volátil do dia atual e persistente do histórico
     let movimentacoesDoDia = [];
     document.getElementById('dataFechamento').valueAsDate = new Date();
 
-    // Alternar abas
     function switchTab(tabId) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
@@ -158,20 +170,20 @@
         
         if(tabId === 'aba-fechamento') {
             atualizarResumoCalculado();
+        } else if(tabId === 'aba-mensal') {
+            gerarRelatorioMensal();
         }
     }
 
-    // Adicionar movimentação temporária na tabela
+    // Fluxo da Aba 1 (Lançamentos)
     document.getElementById('movimentacaoForm').addEventListener('submit', function(e) {
         e.preventDefault();
-        
         const tipo = document.getElementById('tipo').value;
         const pagamento = document.getElementById('pagamento').value;
         const valor = parseFloat(document.getElementById('valorMov').value) || 0;
         const descricao = document.getElementById('descMov').value || '---';
 
         movimentacoesDoDia.push({ tipo, pagamento, valor, descricao });
-        
         atualizarTabela();
         document.getElementById('movimentacaoForm').reset();
     });
@@ -179,15 +191,13 @@
     function atualizarTabela() {
         const tbody = document.getElementById('tabelaMovimentacoes');
         tbody.innerHTML = '';
-        
         movimentacoesDoDia.forEach(m => {
             const classeCor = m.tipo === 'Entrada' ? 'txt-success' : 'txt-danger';
-            const sinal = m.tipo === 'Entrada' ? '+' : '-';
             tbody.innerHTML += `
                 <tr>
                     <td class="${classeCor}">${m.tipo}</td>
                     <td>${m.pagamento}</td>
-                    <td class="${classeCor}">${sinal} R$ ${m.valor.toFixed(2)}</td>
+                    <td class="${classeCor}">${m.tipo==='Entrada'?'+':'-'} R$ ${m.valor.toFixed(2)}</td>
                     <td>${m.descricao}</td>
                 </tr>
             `;
@@ -196,7 +206,6 @@
 
     function atualizarResumoCalculado() {
         const abertura = parseFloat(document.getElementById('abertura').value) || 0;
-        
         const entradas = movimentacoesDoDia.filter(m => m.tipo === 'Entrada').reduce((acc, cur) => acc + cur.valor, 0);
         const saidas = movimentacoesDoDia.filter(m => m.tipo === 'Saída').reduce((acc, cur) => acc + cur.valor, 0);
         const esperado = abertura + entradas - saidas;
@@ -206,13 +215,11 @@
         document.getElementById('resumoEsperado').innerText = esperado.toFixed(2);
     }
 
-    // Fechar o caixa e salvar de forma permanente no histórico
+    // Fluxo da Aba 2 (Salvar Fechamento)
     document.getElementById('fechamentoForm').addEventListener('submit', function(e) {
         e.preventDefault();
-        
-        const dataInput = document.getElementById('dataFechamento').value;
+        const dataInput = document.getElementById('dataFechamento').value; // YYYY-MM-DD
         const [ano, mes, dia] = dataInput.split('-');
-        const dataFormatada = `${dia}/${mes}/${ano}`;
 
         const abertura = parseFloat(document.getElementById('abertura').value) || 0;
         const entradas = movimentacoesDoDia.filter(m => m.tipo === 'Entrada').reduce((acc, cur) => acc + cur.valor, 0);
@@ -223,42 +230,35 @@
         const diferenca = real - esperado;
 
         const registro = {
-            data: dataFormatada,
-            esperado: esperado.toFixed(2),
-            real: real.toFixed(2),
-            diferenca: diferenca.toFixed(2),
-            status: diferenca === 0 ? 'Perfeito' : (diferenca > 0 ? 'Sobrando' : 'Faltando')
+            data: `${dia}/${mes}/${ano}`,
+            ano: ano,
+            mes: mes, // Guardado numericamente para agrupamento rápido
+            entradas: entradas,
+            saidas: saidas,
+            esperado: esperado,
+            real: real,
+            diferenca: diferenca
         };
 
-        let historico = JSON.parse(localStorage.getItem('bancoCaixaCompleto')) || [];
+        let historico = JSON.parse(localStorage.getItem('bancoCaixaV3')) || [];
         historico.unshift(registro);
-        localStorage.setItem('bancoCaixaCompleto', JSON.stringify(historico));
+        localStorage.setItem('bancoCaixaV3', JSON.stringify(historico));
 
-        // Mostrar resultado na tela
         const resDiv = document.getElementById('resultadoFechamento');
         resDiv.style.display = 'block';
-        if(diferenca === 0) {
-            resDiv.style.backgroundColor = '#d4edda'; resDiv.style.color = '#155724';
-            resDiv.innerHTML = `Sucesso! Caixa fechou Perfeito.`;
-        } else if (diferenca > 0) {
-            resDiv.style.backgroundColor = '#d4edda'; resDiv.style.color = '#155724';
-            resDiv.innerHTML = `Salvo! Sobraram R$ ${diferenca.toFixed(2)}`;
-        } else {
-            resDiv.style.backgroundColor = '#f8d7da'; resDiv.style.color = '#721c24';
-            resDiv.innerHTML = `Alerta! Faltaram R$ ${Math.abs(diferenca).toFixed(2)}`;
-        }
+        resDiv.style.backgroundColor = diferenca === 0 ? '#d4edda' : (diferenca > 0 ? '#d4edda' : '#f8d7da');
+        resDiv.style.color = diferenca >= 0 ? '#155724' : '#721c24';
+        resDiv.innerHTML = diferenca === 0 ? "Caixa Perfeito!" : `Fechado com diferença de R$ ${diferenca.toFixed(2)}`;
 
-        // Limpar os lançamentos do dia para o próximo encerramento
         movimentacoesDoDia = [];
         atualizarTabela();
         document.getElementById('fechamentoForm').reset();
         document.getElementById('dataFechamento').valueAsDate = new Date();
-        
         renderHistorico();
     });
 
     function renderHistorico() {
-        const historico = JSON.parse(localStorage.getItem('bancoCaixaCompleto')) || [];
+        const historico = JSON.parse(localStorage.getItem('bancoCaixaV3')) || [];
         const histDiv = document.getElementById('historicoGeral');
         histDiv.innerHTML = '';
 
@@ -268,26 +268,83 @@
         }
 
         historico.forEach(item => {
-            const classeStatus = item.status === 'Faltando' ? 'item-danger' : 'item-success';
-            const corDif = item.status === 'Faltando' ? 'color: var(--danger);' : 'color: var(--success);';
+            const status = item.diferenca === 0 ? 'Perfeito' : (item.diferenca > 0 ? 'Sobrando' : 'Faltando');
+            const classeStatus = status === 'Faltando' ? 'item-danger' : 'item-success';
             histDiv.innerHTML += `
                 <div class="history-item ${classeStatus}">
-                    <strong>Data: ${item.data}</strong> — Status: ${item.status}<br>
-                    <small>Calculado: R$ ${item.esperado} | Conferido: R$ ${item.real}</small><br>
-                    <small style="${corDif}">Diferença: R$ ${item.diferenca}</small>
+                    <strong>Data: ${item.data}</strong> — Status: ${status}<br>
+                    <small>Entradas: R$ ${item.entradas.toFixed(2)} | Saídas: R$ ${item.saidas.toFixed(2)}</small><br>
+                    <small>Calculado: R$ ${item.esperado.toFixed(2)} | Conferido: R$ ${item.real.toFixed(2)}</small><br>
+                    <small style="font-weight:bold; color:${item.diferenca < 0?'var(--danger)':'var(--success)'}">Diferença: R$ ${item.diferenca.toFixed(2)}</small>
+                </div>
+            `;
+        });
+    }
+
+    // Fluxo da Aba 3 (Relatório Mensal Automático)
+    function gerarRelatorioMensal() {
+        const historico = JSON.parse(localStorage.getItem('bancoCaixaV3')) || [];
+        const container = document.getElementById('containerMensal');
+        container.innerHTML = '';
+
+        if (historico.length === 0) {
+            container.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #777;">Feche pelo menos um dia para gerar o relatório mensal.</p>';
+            return;
+        }
+
+        const nomesMeses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+        let resumoMeses = {};
+
+        // Agrupar os registros do histórico por Ano-Mês
+        historico.forEach(item => {
+            const chave = `${item.ano}-${item.mes}`;
+            if (!resumoMeses[chave]) {
+                resumoMeses[chave] = {
+                    nome: `${nomesMeses[parseInt(item.mes) - 1]} / ${item.ano}`,
+                    totalEntradas: 0,
+                    totalSaidas: 0,
+                    totalDiferencas: 0,
+                    diasContados: 0
+                };
+            }
+            resumoMeses[chave].totalEntradas += item.entradas;
+            resumoMeses[chave].totalSaidas += item.saidas;
+            resumoMeses[chave].totalDiferencas += item.diferenca;
+            resumoMeses[chave].diasContados++;
+        });
+
+        // Montar os cards visuais na tela
+        Object.keys(resumoMeses).sort().reverse().forEach(chave => {
+            const dados = resumoMeses[chave];
+            const saldoLiquido = dados.totalEntradas - dados.totalSaidas;
+            
+            container.innerHTML += `
+                <div class="month-card">
+                    <div class="month-title">${dados.nome}</div>
+                    <div class="month-stat"><span>Dias Fechados:</span> <strong>${dados.diasContados}</strong></div>
+                    <div class="month-stat"><span>Faturamento (Entradas):</span> <span class="txt-success">R$ ${dados.totalEntradas.toFixed(2)}</span></div>
+                    <div class="month-stat"><span>Despesas (Saídas):</span> <span class="txt-danger">R$ ${dados.totalSaidas.toFixed(2)}</span></div>
+                    <div class="month-stat" style="border-top: 1px dashed #edf2f7; padding-top: 5px; margin-top: 5px;">
+                        <span>Saldo Líquido:</span> <strong>R$ ${saldoLiquido.toFixed(2)}</strong>
+                    </div>
+                    <div class="month-stat">
+                        <span>Erros de Caixa (Acumulado):</span> 
+                        <strong style="color:${dados.totalDiferencas < 0 ? 'var(--danger)' : 'var(--success)'}">R$ ${dados.totalDiferencas.toFixed(2)}</strong>
+                    </div>
                 </div>
             `;
         });
     }
 
     function limparTodoHistorico() {
-        if(confirm("Deseja apagar permanentemente o histórico de fechamentos salvos?")) {
-            localStorage.removeItem('bancoCaixaCompleto');
+        if(confirm("Deseja apagar permanentemente todo o histórico? Isso também apagará os relatórios mensais.")) {
+            localStorage.removeItem('bancoCaixaV3');
             renderHistorico();
+            if(document.getElementById('aba-mensal').classList.contains('active')) gerarRelatorioMensal();
         }
     }
 
-    // Inicialização
+    // Inicializar carregamento de dados anteriores
     renderHistorico();
 </script>
 
