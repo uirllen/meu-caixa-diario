@@ -217,7 +217,7 @@
                     </div>
                     <div class="form-group">
                         <label>Valor (R$):</label>
-                        <input type="number" id="valorMov" step="0.01" required placeholder="0,00">
+                        <input type="text" inputmode="decimal" id="valorMov" required placeholder="0,00">
                     </div>
                     <div class="form-group">
                         <label>Identificação / Notas:</label>
@@ -254,7 +254,7 @@
                     </div>
                     <div class="form-group">
                         <label>Fundo de Caixa Inicial (Troco de Abertura):</label>
-                        <input type="number" id="abertura" step="0.01" value="0.00" oninput="calcularResumo()" required>
+                        <input type="text" inputmode="decimal" id="abertura" value="0,00" oninput="calcularResumo()" required>
                     </div>
                     
                     <div style="background: rgba(0,0,0,0.03); padding: 15px; border-radius: 8px; margin-bottom: 15px; font-size: 14px;">
@@ -267,7 +267,7 @@
                     <!-- CONTAINER COM COR DE FUNDO DINÂMICA -->
                     <div id="containerReal" class="form-group" style="background: #fffbeb; border: 1px solid #fde68a; color: #1f2937;">
                         <label><strong>Conferência Real na Gaveta (Dinheiro + Canhoto):</strong></label>
-                        <input type="number" id="real" step="0.01" placeholder="Quanto tem fisicamente?" oninput="calcularResumo()" required>
+                        <input type="text" inputmode="decimal" id="real" placeholder="Quanto tem fisicamente?" oninput="calcularResumo()" required>
                     </div>
                     <button type="submit" class="btn-success">Travar e Salvar Dia</button>
                 </form>
@@ -322,6 +322,21 @@
     let chart1 = null, chart2 = null;
     document.getElementById('dataFechamento').valueAsDate = new Date();
 
+    // Converte texto digitado em número, aceitando formato brasileiro (vírgula decimal, ponto de milhar)
+    // Ex: "1.500,50" -> 1500.50 | "150,5" -> 150.5 | "150.5" -> 150.5
+    function parseValor(v) {
+        if (v === undefined || v === null) return 0;
+        let s = v.toString().trim();
+        if (s === '') return 0;
+        s = s.replace(/[^0-9,.\-]/g, '');
+        if (s.indexOf(',') !== -1) {
+            s = s.replace(/\./g, '');   // remove pontos de milhar
+            s = s.replace(',', '.');    // vírgula vira separador decimal
+        }
+        const n = parseFloat(s);
+        return isNaN(n) ? 0 : n;
+    }
+
     function switchTab(tabId) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
@@ -337,7 +352,7 @@
         e.preventDefault();
         const tipo = document.getElementById('tipo').value;
         const pagamento = document.getElementById('pagamento').value;
-        const valor = parseFloat(document.getElementById('valorMov').value) || 0;
+        const valor = parseValor(document.getElementById('valorMov').value);
         const desc = document.getElementById('descMov').value || 'Geral';
 
         movimentacoesDia.push({tipo, pagamento, valor, desc});
@@ -356,14 +371,14 @@
 
     // === CÁLCULO E ATUALIZAÇÃO DE CORES DINÂMICAS ===
     function calcularResumo() {
-        const ab = parseFloat(document.getElementById('abertura').value) || 0;
+        const ab = parseValor(document.getElementById('abertura').value);
         const ent = movimentacoesDia.filter(m=>m.tipo==='Entrada').reduce((a,c)=>a+c.valor,0);
         const sai = movimentacoesDia.filter(m=>m.tipo==='Saída').reduce((a,c)=>a+c.valor,0);
         
         const esperado = ab + ent - sai;
         const realInput = document.getElementById('real').value;
-        const real = parseFloat(realInput) || 0;
-        const diferenca = real - esperado;
+        const real = parseValor(realInput);
+        const diferenca = Math.round((real - esperado) * 100) / 100;
         
         document.getElementById('resEntradas').innerText = `R$ ${ent.toFixed(2)}`;
         document.getElementById('resSaidas').innerText = `R$ ${sai.toFixed(2)}`;
@@ -397,11 +412,11 @@
         const dataRaw = document.getElementById('dataFechamento').value;
         const [ano, mes, dia] = dataRaw.split('-');
         
-        const ab = parseFloat(document.getElementById('abertura').value) || 0;
+        const ab = parseValor(document.getElementById('abertura').value);
         const ent = movimentacoesDia.filter(m=>m.tipo==='Entrada').reduce((a,c)=>a+c.valor,0);
         const sai = movimentacoesDia.filter(m=>m.tipo==='Saída').reduce((a,c)=>a+c.valor,0);
         const esp = ab + ent - sai;
-        const r = parseFloat(document.getElementById('real').value) || 0;
+        const r = parseValor(document.getElementById('real').value);
 
         let formas = {Pix: 0, CartaoCredito: 0, CartaoDebito: 0, Dinheiro: 0};
         movimentacoesDia.filter(m=>m.tipo==='Entrada').forEach(m => {
@@ -417,7 +432,7 @@
             saidas: sai,
             esperado: esp,
             real: r,
-            diferenca: r - esp,
+            diferenca: Math.round((r - esp) * 100) / 100,
             formas: formas
         };
 
